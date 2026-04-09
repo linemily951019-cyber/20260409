@@ -265,8 +265,8 @@ class Particle {
 // 開始新遊戲
 function startGame(difficulty) {
   currentDifficulty = difficulty;
-  if (difficulty === 'EASY') { fakeCount = 0; timeLeft = 30; }
-  else if (difficulty === 'MEDIUM') { fakeCount = 5; timeLeft = 45; }
+  if (difficulty === 'EASY') { fakeCount = 0; timeLeft = 40; }
+  else if (difficulty === 'MEDIUM') { fakeCount = 5; timeLeft = 50; }
   else if (difficulty === 'HARD') { fakeCount = 15; timeLeft = 60; }
 
   score = 0;
@@ -291,7 +291,7 @@ function drawStartScreen() {
   strokeWeight(3);
   fill(200);
   textSize(20);
-  text("在 30 秒內找出盡可能多的顏色！", width / 2, height / 2 - 50);
+  text("在期限內找出盡可能多的顏色！", width / 2, height / 2 - 50);
 
   drawButton("簡單", width / 2 - 150, height / 2 + 40, 100, 50, color(50, 200, 50));
   drawButton("中等", width / 2, height / 2 + 40, 100, 50, color(200, 200, 50));
@@ -338,8 +338,8 @@ function drawRanksScreen() {
   let colW = 220;
   
   fill(255);
-  text("簡單 (30秒)", width / 2 - colW, height / 2 - 100);
-  text("中等 (45秒)", width / 2, height / 2 - 100);
+  text("簡單 (40秒)", width / 2 - colW, height / 2 - 100);
+  text("中等 (50秒)", width / 2, height / 2 - 100);
   text("困難 (60秒)", width / 2 + colW, height / 2 - 100);
 
   let ranks = ['S', 'A', 'B', 'C'];
@@ -577,8 +577,8 @@ function drawGameOver() {
   
   // 根據難度決定評級門檻
   let s_req = 150, a_req = 100, b_req = 50, c_req = 20; // 預設(簡單)
-  if (currentDifficulty === 'MEDIUM') { s_req = 120; a_req = 80; b_req = 40; c_req = 15; }
-  else if (currentDifficulty === 'HARD') { s_req = 100; a_req = 60; b_req = 30; c_req = 10; }
+  if (currentDifficulty === 'MEDIUM') { s_req = 120; a_req = 80; b_req = 40; c_req = 20; }
+  else if (currentDifficulty === 'HARD') { s_req = 100; a_req = 60; b_req = 30; c_req = 20; }
 
   // 決定評級與顏色
   let grade = 'D';

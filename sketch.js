@@ -6,15 +6,30 @@ let particles = [];
 let shakeTime = 0;
 let colorDiffusion = { active: false, x: 0, y: 0, radius: 0, color: null };
 let combo = 0; // 連擊數
-let timeLeft = 30; // 倒數計時 30 秒
-let gameState = 'START'; // 遊戲狀態：'START', 'RULES', 'RANKS', 'PLAYING', 'GAMEOVER'
+let timeLeft = 40; // 倒數計時 40 秒
+let gameState = 'START'; // 遊戲狀態：'START', 'RULES', 'RANKS', 'SETTINGS', 'PLAYING', 'GAMEOVER'
 let currentDifficulty = 'EASY'; // 當前難度
 let battery = 100; // 手電筒電量 (困難模式)
+
+// 音效變數
+let bgm;
+let clickSound;
+let errorSound;
+let bgmEnabled = true; // 背景音樂開關
+let sfxEnabled = true; // 音效開關
 
 // 設定常數
 const FLASHLIGHT_RADIUS = 120; // 手電筒照射半徑
 const GRID_SIZE = 50; // 全螢幕方格大小
 let fakeCount = 0; // 陷阱方格數量 (將隨難度變更)
+
+function preload() {
+  // 預先載入所有音效檔案
+  soundFormats('mp3');
+  bgm = loadSound('background.mp3');
+  clickSound = loadSound('click.mp3');
+  errorSound = loadSound('error.mp3');
+}
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -22,6 +37,8 @@ function setup() {
   noSmooth(); // 關閉抗鋸齒以增強像素感
   textFont('Courier New'); // 改回復古打字機字體，中文會自動使用系統預設字體
   textStyle(BOLD);
+  bgm.setVolume(0.05); // 將背景音樂音量調得更小聲
+  errorSound.setVolume(0.15); // 調低錯誤音效音量，避免太過刺耳
 }
 
 function draw() {
@@ -43,12 +60,17 @@ function draw() {
     drawStaticNoise();
     drawFlashlight(null, FLASHLIGHT_RADIUS);
     return;
+  } else if (gameState === 'SETTINGS') {
+    drawSettingsScreen();
+    drawStaticNoise();
+    drawFlashlight(null, FLASHLIGHT_RADIUS);
+    return;
   }
 
   // 遊戲進行時的邏輯 (時間與電量)
   if (gameState === 'PLAYING' && timeLeft > 0) {
     if (currentDifficulty === 'HARD') {
-      battery -= 100 / (60 * 60); // 調回原本的消耗速度，45 秒自然扣光
+      battery -= 100 / (60 * 60); // 調回原本的消耗速度，60 秒自然扣光
       battery = max(battery, 0); // 確保不小於 0
     }
 
@@ -143,30 +165,57 @@ function draw() {
 }
 
 function mousePressed() {
+  // 處理音訊播放：瀏覽器需要使用者互動後才能播放聲音
+  if (getAudioContext().state !== 'running') {
+    getAudioContext().resume();
+  }
+  if (bgmEnabled && !bgm.isPlaying()) {
+    bgm.loop(); // 在第一次點擊時循環播放背景音樂
+  }
+
   // 標題畫面點擊判斷
   if (gameState === 'START') {
-    if (isClicked(width / 2 - 150, height / 2 + 40, 100, 50)) startGame('EASY');
-    else if (isClicked(width / 2, height / 2 + 40, 100, 50)) startGame('MEDIUM');
-    else if (isClicked(width / 2 + 150, height / 2 + 40, 100, 50)) startGame('HARD');
-    else if (isClicked(width / 2, height / 2 + 120, 200, 50)) gameState = 'RULES';
+    if (isClicked(width / 2 - 150, height / 2 + 40, 100, 50)) { if(sfxEnabled) clickSound.play(); startGame('EASY'); }
+    else if (isClicked(width / 2, height / 2 + 40, 100, 50)) { if(sfxEnabled) clickSound.play(); startGame('MEDIUM'); }
+    else if (isClicked(width / 2 + 150, height / 2 + 40, 100, 50)) { if(sfxEnabled) clickSound.play(); startGame('HARD'); }
+    else if (isClicked(width / 2, height / 2 + 120, 200, 50)) { if(sfxEnabled) clickSound.play(); gameState = 'RULES'; }
+    else if (isClicked(width / 2, height / 2 + 180, 200, 50)) { if(sfxEnabled) clickSound.play(); gameState = 'SETTINGS'; }
     return;
   }
 
   // 規則畫面點擊判斷
   if (gameState === 'RULES') {
-    if (isClicked(width / 2 - 120, height / 2 + 160, 200, 50)) gameState = 'START';
-    else if (isClicked(width / 2 + 120, height / 2 + 160, 200, 50)) gameState = 'RANKS';
+    if (isClicked(width / 2 - 120, height / 2 + 160, 200, 50)) { if(sfxEnabled) clickSound.play(); gameState = 'START'; }
+    else if (isClicked(width / 2 + 120, height / 2 + 160, 200, 50)) { if(sfxEnabled) clickSound.play(); gameState = 'RANKS'; }
     return;
   }
 
   // 評級標準畫面點擊判斷
   if (gameState === 'RANKS') {
-    if (isClicked(width / 2, height / 2 + 220, 200, 50)) gameState = 'RULES';
+    if (isClicked(width / 2, height / 2 + 220, 200, 50)) { if(sfxEnabled) clickSound.play(); gameState = 'RULES'; }
+    return;
+  }
+
+  // 設置畫面點擊判斷
+  if (gameState === 'SETTINGS') {
+    if (isClicked(width / 2, height / 2 - 50, 200, 50)) {
+      if(sfxEnabled) clickSound.play();
+      bgmEnabled = !bgmEnabled;
+      if (bgmEnabled && !bgm.isPlaying()) bgm.loop();
+      else if (!bgmEnabled && bgm.isPlaying()) bgm.stop();
+    } else if (isClicked(width / 2, height / 2 + 30, 200, 50)) {
+      sfxEnabled = !sfxEnabled;
+      if(sfxEnabled) clickSound.play();
+    } else if (isClicked(width / 2, height / 2 + 160, 200, 50)) {
+      if(sfxEnabled) clickSound.play();
+      gameState = 'START';
+    }
     return;
   }
 
   // 如果遊戲已結束，點擊畫面可重新開始
   if (gameState === 'GAMEOVER') {
+    if(sfxEnabled) clickSound.play();
     gameState = 'START'; // 回到標題畫面重新選擇難度
     return;
   }
@@ -183,6 +232,7 @@ function mousePressed() {
       if (hitX && hitY) {
         if (d < currentRadius) {
           if (cell.type === 'target') {
+            if (sfxEnabled) clickSound.play();
             combo++;
             score += 10 * combo;
             shakeTime = 20;
@@ -191,6 +241,10 @@ function mousePressed() {
             setupLevel();
             hit = true;
           } else {
+            if (sfxEnabled) {
+              if (errorSound.isPlaying()) errorSound.stop(); // 截斷殘音防延遲
+              errorSound.play();
+            }
             combo = 0;
             score -= 2;
             shakeTime = 10;
@@ -206,6 +260,10 @@ function mousePressed() {
             hit = true;
           }
         } else {
+          if (sfxEnabled) {
+            if (errorSound.isPlaying()) errorSound.stop(); // 截斷殘音防延遲
+            errorSound.play();
+          }
           combo = 0;
           score -= 2;
           shakeTime = 5;
@@ -298,6 +356,7 @@ function drawStartScreen() {
   drawButton("困難", width / 2 + 150, height / 2 + 40, 100, 50, color(200, 50, 50));
 
   drawButton("遊戲規則", width / 2, height / 2 + 120, 200, 50, color(100, 100, 255));
+  drawButton("設置", width / 2, height / 2 + 180, 200, 50, color(150, 100, 200));
 }
 
 // 繪製遊戲規則畫面
@@ -360,6 +419,26 @@ function drawRanksScreen() {
   text("D : 未達 C 級標準", width / 2, height / 2 + 140);
 
   drawButton("返回規則", width / 2, height / 2 + 220, 200, 50, color(150));
+}
+
+// 繪製設置畫面
+function drawSettingsScreen() {
+  textAlign(CENTER, CENTER);
+  stroke(0);
+  strokeWeight(4);
+  fill(255);
+  textSize(40);
+  text("設置", width / 2, height / 2 - 150);
+
+  let bgmText = bgmEnabled ? "背景音樂: 開" : "背景音樂: 關";
+  let bgmColor = bgmEnabled ? color(50, 200, 50) : color(200, 50, 50);
+  drawButton(bgmText, width / 2, height / 2 - 50, 200, 50, bgmColor);
+
+  let sfxText = sfxEnabled ? "音效: 開" : "音效: 關";
+  let sfxColor = sfxEnabled ? color(50, 200, 50) : color(200, 50, 50);
+  drawButton(sfxText, width / 2, height / 2 + 30, 200, 50, sfxColor);
+
+  drawButton("返回標題", width / 2, height / 2 + 160, 200, 50, color(150));
 }
 
 // 按鈕點擊判定輔助函數

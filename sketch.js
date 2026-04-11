@@ -38,7 +38,7 @@ function setup() {
   textFont('Courier New'); // 改回復古打字機字體，中文會自動使用系統預設字體
   textStyle(BOLD);
   bgm.setVolume(0.05); // 將背景音樂音量調得更小聲
-  errorSound.setVolume(0.15); // 調低錯誤音效音量，避免太過刺耳
+  errorSound.setVolume(0.2); // 調低錯誤音效音量，避免太過刺耳
 }
 
 function draw() {
